@@ -1,5 +1,5 @@
 import sys
-from collections import deque, OrderedDict
+from collections import deque, OrderedDict, defaultdict
 
 
 def read_input(filename):
@@ -14,6 +14,7 @@ def read_input(filename):
 
 
 def fifo_misses(k, requests):
+
     cache = set()
     order = deque()
     misses = 0
@@ -40,6 +41,7 @@ def fifo_misses(k, requests):
 
 
 def lru_misses(k, requests):
+
     cache = OrderedDict()
     misses = 0
 
@@ -59,6 +61,50 @@ def lru_misses(k, requests):
     return misses
 
 
+def optff_misses(k, requests):
+
+    future = defaultdict(deque)
+
+    for i, item in enumerate(requests):
+        future[item].append(i)
+
+    cache = set()
+    misses = 0
+
+    for i, item in enumerate(requests):
+
+        future[item].popleft()
+
+        if item in cache:
+            continue
+
+        misses += 1
+
+        if len(cache) < k:
+            cache.add(item)
+            continue
+
+        victim = None
+        farthest = -1
+
+        for c in cache:
+
+            if not future[c]:
+                victim = c
+                break
+
+            next_use = future[c][0]
+
+            if next_use > farthest:
+                farthest = next_use
+                victim = c
+
+        cache.remove(victim)
+        cache.add(item)
+
+    return misses
+
+
 def main():
 
     if len(sys.argv) != 2:
@@ -70,7 +116,7 @@ def main():
 
     fifo = fifo_misses(k, requests)
     lru = lru_misses(k, requests)
-    optff = 0
+    optff = optff_misses(k, requests)
 
     print(f"FIFO  : {fifo}")
     print(f"LRU   : {lru}")
